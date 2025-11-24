@@ -1,16 +1,9 @@
 using UnityEngine;
 
-public class EnvironmentVariables : MonoBehaviour
+// Used to control settings between different environment dimensions
+public class EnvironmentVariables
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    public float gravityScale = 1.0f;
+    public float movementSpeedMultiplier = 1.0f;
+    public float jumpHeightMultiplier = 1.0f;
 }
