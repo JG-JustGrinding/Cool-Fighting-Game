@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using System.Collections;
-using Mono.Cecil.Cil;
 
 // Basic character class to be extended for specific character behaviors
 // This class serves as a foundation for character-related functionality.
