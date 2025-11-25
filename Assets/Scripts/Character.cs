@@ -1,75 +1,149 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.VisualScripting;
+using System.Collections;
+using Mono.Cecil.Cil;
 
 // Basic character class to be extended for specific character behaviors
 // This class serves as a foundation for character-related functionality.
 // Handles logic, hitboxes/hurtboxes, actions, and calls animations
 public class Character : MonoBehaviour
 {
+
+    [Header("Movement")]
     public float movementSpeed = 5.0f;
+    protected float currentMovementSpeed = 5.0f;
+    protected float jumpBoostMovementSpeedMultiplier = 1.0f;
+
+    [Header("Dash Settings")]
+    public float dashSpeed = 12.5f;
+    public float dashDuration = 0.2f;
+    public float dashCooldown = 1.0f;
+    public float dashEndSmoothing = 0.1f;
+    protected bool isDashing;
+    protected bool hasDashed;
+    protected bool isInDashCooldown;
+    protected float dashDirection;
+    protected float dashInputTiming = 0.102f; // max time between inputs for dash detection
+
+    [Header("Jumping")]
+    public float jumpForce = 23f;
+    public float gravityScale = 7f;
+    public float gravityScaleWhileFalling = 12f;
+    public float airGravityIncrement = 0.5f;
+    public float airGravityIncrementGrowth = 1.1f;
+    public float jumpBurstSpeedMultiplier = 1.5f;
+    public float jumpBurstDuration = 0.1f;
+    public float jumpBurstVerticalBoost = 2.0f;
+    float currentAirGravityIncrement = 0.5f;
+    protected float jumpDirection;
+    protected bool isGrounded;
+    protected bool hasJumped;
+
+    protected Rigidbody2D rb;
+
     private List<InputEntry> moveHistory = new List<InputEntry>(); // to track input history for inputs like dashing and special moves
-    private int moveHistoryLimit = 20;
+    private readonly int moveHistoryLimit = 20;
+
+    private readonly float groundCheckRadius = 0.1f;
+
+
+    [Header("Components")]
+    public Transform groundCheckTransform;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         moveHistory = new List<InputEntry>();
+        currentMovementSpeed = movementSpeed;
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
-    public virtual void Move(float rawInput)
+    public virtual void Move(float rawInput, float rawInputY)
     {
         string inputType = "neutral";
-
         if (rawInput >= 0.5)
         {
             rawInput = 1.0f;
             inputType = "forward";
+
+            if (rawInput != dashDirection)
+            {
+                hasDashed = false;
+            }
         } else if (rawInput <= -0.5)
         {
             rawInput = -1.0f;
             inputType = "backward";
-        } 
+
+            if (rawInput != dashDirection)
+            {
+                hasDashed = false;
+            }
+        }
         else
         {
             rawInput = 0.0f;
+            hasDashed = false;
         }
 
-        Vector3 movement = new Vector3(rawInput, 0) * GetMovementSpeed() * Time.deltaTime;
+        if (isDashing)
+        {
+            rawInput = dashDirection;
+        }
+
+        if (!isGrounded)
+        {
+            rawInput = jumpDirection;
+        }
+
+        Vector3 movement = new Vector3(rawInput, 0) * GetMovementSpeed() * jumpBoostMovementSpeedMultiplier * Time.deltaTime;
         transform.Translate(movement, Space.World);
 
-        CheckForDash();
-
         AddNewMoveToHistory(inputType, true);
+
+        if (rawInput != 0f)
+        {
+            CheckForDash(rawInput);
+        }
+
+        if (rawInputY != 0f)
+        {
+            ReceiveVerticalInput(rawInput, rawInputY);
+        }
     }
 
-    public virtual void ReceiveVerticalInput(float direction)
+    protected virtual void ReceiveVerticalInput(float xInput, float yInput)
     {
-        // crouch or jump logic
+        // crouch & jump logic
+        if (yInput >= 0.65f)
+        {
+            Jump(xInput);
+        }
+        else if (yInput <= -0.5f)
+        {
+            Crouch();
+        }
     }
 
-    void CheckForDash()
+    void CheckForDash(float direction)
     {
+        if (isDashing || hasDashed || isInDashCooldown || Time.time - moveHistory[^1].time > dashInputTiming || !isGrounded)
+        {
+            return;
+        }
+
         // Logic to check moveHistory for dash input pattern
         if (moveHistory.Count < 3)
         {
             return; // Not enough inputs to dash
         }
-        InputEntry lastInput = moveHistory[moveHistory.Count - 1];
-        InputEntry secondLastInput = moveHistory[moveHistory.Count - 2];
-        InputEntry thirdLastInput = moveHistory[moveHistory.Count - 3];
-        if (lastInput.name == "forward" && secondLastInput.name == "neutral" && thirdLastInput.name == "forward")
+
+        if (CheckLastMoveCombination("forward", "neutral", "forward") || CheckLastMoveCombination("backward", "neutral", "backward"))
         {
-            // check to see if timing is within dash window
-            lastInput = secondLastInput;
-            if (lastInput.timingFromLastInput < 0.102f && thirdLastInput.timingFromLastInput < 0.102f)
+            if (LastMovesWithinThreshold(dashInputTiming, 3))
             {
-                Dash();
+                Dash(direction);
             }
         }
     }
@@ -79,9 +153,64 @@ public class Character : MonoBehaviour
         // Logic to receive and process input
     }
 
-    public virtual void Jump()
+    private void Update()
     {
-        // Custom jump logic can be implemented here
+        isGrounded = Physics2D.OverlapCircle(groundCheckTransform.position, groundCheckRadius, LayerMask.GetMask("Ground"));
+
+        if (!isGrounded)
+        {
+            jumpBoostMovementSpeedMultiplier = 1.5f; // give burst of speed while in air
+            hasJumped = false; // this is mainly in case there's a weird case where the player is jumping but they're still considered grounded
+        } else
+        {
+            jumpBoostMovementSpeedMultiplier = 1.0f;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (rb.linearVelocityY < 0)
+        {
+            rb.gravityScale = gravityScaleWhileFalling;
+        }
+        else
+        {
+            rb.gravityScale = gravityScale;
+        }
+
+        if (!isGrounded)
+        {
+            rb.gravityScale += currentAirGravityIncrement * Time.fixedDeltaTime;
+            currentAirGravityIncrement *= airGravityIncrementGrowth;
+        } else
+        {
+            currentAirGravityIncrement = airGravityIncrement;
+        }
+    }
+
+    public virtual void Jump(float direction)
+    {
+        if (!isGrounded || hasJumped || isDashing)
+        {
+            return;
+        }
+
+        jumpDirection = direction;
+        rb.linearVelocityY = jumpForce; // only use y because x is controlled by other methods
+        AddNewMoveToHistory("jump");
+        hasJumped = true;
+    }
+
+    protected IEnumerator JumpBurst()
+    {
+        // If the user jumps forward or backward, give a small burst of horizontal speed
+        currentMovementSpeed = movementSpeed * jumpBurstSpeedMultiplier;
+
+        rb.linearVelocityY += jumpBurstVerticalBoost;
+
+        yield return new WaitForSeconds(jumpBurstDuration);
+
+        currentMovementSpeed = movementSpeed;
     }
 
     public virtual void Crouch()
@@ -94,9 +223,42 @@ public class Character : MonoBehaviour
         // Custom block logic can be implemented here
     }
 
-    public virtual void Dash()
+    public virtual void Dash(float direction)
     {
-        // Custom dash logic can be implemented here
+        if (isDashing)
+        {
+            return;
+        }
+
+        dashDirection = direction;
+
+        StartCoroutine(DashCoroutine());
+    }
+
+    protected IEnumerator DashCoroutine()
+    {
+        isDashing = true;
+
+        currentMovementSpeed = dashSpeed;
+
+        yield return new WaitForSeconds(dashDuration);
+
+        float initialSpeed = movementSpeed;
+        float elapsedTime = 0f;
+        while (elapsedTime < dashEndSmoothing)
+        {
+            currentMovementSpeed = Mathf.Lerp(initialSpeed, currentMovementSpeed, elapsedTime / dashEndSmoothing);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        hasDashed = true;
+        isInDashCooldown = true;
+        isDashing = false;
+
+        yield return new WaitForSeconds(dashCooldown);
+
+        isInDashCooldown = false;
     }
 
     public virtual void Attack()
@@ -111,7 +273,7 @@ public class Character : MonoBehaviour
 
     protected virtual float GetMovementSpeed()
     {
-        return movementSpeed; // affected by blocking, dashing, crouching, etc.
+        return currentMovementSpeed; // affected by blocking, dashing, crouching, etc.
     }
 
     public virtual void AddNewMoveToHistory(string inputName, bool noRepeats = false)
@@ -124,7 +286,7 @@ public class Character : MonoBehaviour
                 return; // Do not add duplicate input
             }
         }
-        InputEntry newEntry = new InputEntry { name = inputName, timingFromLastInput = GetLastMoveTime(), time = Time.time };
+        InputEntry newEntry = new() { name = inputName, timingFromLastInput = GetLastMoveTime(), time = Time.time };
         moveHistory.Add(newEntry);
         if (moveHistory.Count > moveHistoryLimit)
         {
@@ -141,8 +303,129 @@ public class Character : MonoBehaviour
 
         return Time.time - moveHistory[moveHistory.Count - 1].time;
     }
+
+    protected virtual bool CheckLastMoveCombination(params string[] combination)
+    {
+        if (moveHistory.Count < combination.Length)
+        {
+            return false;
+        }
+
+        if (moveHistory.Count == 0)
+        {
+            return false;
+        }
+
+        for (int i = 1; i < combination.Length + 1; i++)
+        {
+            var move = moveHistory[moveHistory.Count - i];
+            var expectedMove = combination[combination.Length - i];
+
+            if (move.name != expectedMove)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks the last number of moves to see if they have been inputted within a certain threshold.
+    /// </summary>
+    /// <param name="threshold">The time frame within each input</param>
+    /// <param name="moves">How many inputs the move combination is for. For example, if the combination is 3 moves long, it will check the last 2.</param>
+    /// <returns>bool input succedded</returns>
+    protected virtual bool LastMovesWithinThreshold(float threshold, int moves)
+    {
+        if (moves <= 1)
+        {
+            return true; // no timing window, so return true
+        }
+
+        if (moveHistory.Count < moves)
+        {
+            return false;
+        }
+
+        if (moveHistory.Count == 0)
+        {
+            return false;
+        }
+
+        for (int i = 1; i < moves; i++)
+        {
+            if (moveHistory[^i].timingFromLastInput > threshold)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // I have no idea if this works the way I want it to
+    protected virtual bool LastMovesWithinThreshold(List<float> thresholds, int moves)
+    {
+        if (moves <= 1)
+        {
+            return true; // no timing window, so return true
+        }
+
+        if (moveHistory.Count < moves)
+        {
+            return false;
+        }
+
+        if (moveHistory.Count == 0)
+        {
+            return false;
+        }
+
+        if (thresholds.Count != moves - 1)
+        {
+            throw new System.Exception("Thresholds list length does not match moves count.");
+        }
+
+        for (int i = 1; i < moves; i++)
+        {
+            // ts should work from first move to last move I think
+            var move = moveHistory[(moveHistory.Count - 1) - i];
+            var threshold = thresholds[i - 1];
+            if (move.timingFromLastInput > threshold)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected float GetSnappendInput(float rawInput)
+    {
+        if (rawInput >= 0.5)
+        {
+            return 1.0f;
+        }
+        else if (rawInput <= -0.5)
+        {
+            return -1.0f;
+        }
+
+        return 0f;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (groundCheckTransform != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheckTransform.position, groundCheckRadius);
+        }
+    }
 }
 
+[System.Serializable]
 public struct InputEntry
 {
     public string name; // light, medium, heavy, special, etc. whatever we decide

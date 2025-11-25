@@ -9,7 +9,6 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private PlayerActionControls controls;
     private Vector2 moveInput;
-    private Vector2 verticalInput; // used for jumping and crouching
 
     [SerializeField]
     private Character character;
@@ -34,6 +33,6 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        character.Move(moveInput.x);
+        character.Move(moveInput.x, moveInput.y);
     }
 }
