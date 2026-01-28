@@ -50,76 +50,72 @@ public class Character : MonoBehaviour
     [Header("Components")]
     public Transform groundCheckTransform;
 
+    private CharacterAnimator characterAnimator;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         moveHistory = new List<InputEntry>();
         currentMovementSpeed = movementSpeed;
         rb = GetComponent<Rigidbody2D>();
+        characterAnimator = GetComponent<CharacterAnimator>();
     }
 
-    public virtual void Move(float rawInput, float rawInputY)
+    public virtual void Move(float rawInputX, float rawInputY)
     {
         string inputType = "neutral";
-        if (rawInput >= 0.5)
+        if (rawInputX >= 0.5)
         {
-            rawInput = 1.0f;
+            rawInputX = 1.0f;
             inputType = "forward";
 
-            if (rawInput != dashDirection)
+            if (rawInputX != dashDirection)
             {
                 hasDashed = false;
             }
-        } else if (rawInput <= -0.5)
+        } else if (rawInputX <= -0.5)
         {
-            rawInput = -1.0f;
+            rawInputX = -1.0f;
             inputType = "backward";
 
-            if (rawInput != dashDirection)
+            if (rawInputX != dashDirection)
             {
                 hasDashed = false;
             }
         }
         else
         {
-            rawInput = 0.0f;
+            rawInputX = 0.0f;
             hasDashed = false;
         }
 
         if (isDashing)
         {
-            rawInput = dashDirection;
+            rawInputX = dashDirection;
         }
 
         if (!isGrounded)
         {
-            rawInput = jumpDirection;
+            rawInputX = jumpDirection;
         }
 
-        Vector3 movement = new Vector3(rawInput, 0) * GetMovementSpeed() * jumpBoostMovementSpeedMultiplier * Time.deltaTime;
+        Vector3 movement = new Vector3(rawInputX, 0) * GetMovementSpeed() * jumpBoostMovementSpeedMultiplier * Time.deltaTime;
         transform.Translate(movement, Space.World);
+        AnimateMovement(rawInputX);
 
         AddNewMoveToHistory(inputType, true);
 
-        if (rawInput != 0f)
+        if (rawInputX != 0f)
         {
-            CheckForDash(rawInput);
+            CheckForDash(rawInputX);
         }
 
-        if (rawInputY != 0f)
-        {
-            ReceiveVerticalInput(rawInput, rawInputY);
-        }
-    }
-
-    protected virtual void ReceiveVerticalInput(float xInput, float yInput)
-    {
         // crouch & jump logic
-        if (yInput >= 0.65f)
+        if (rawInputY >= 0.65f)
         {
-            Jump(xInput);
+            Jump(rawInputX);
         }
-        else if (yInput <= -0.5f)
+        else if (rawInputY <= -0.5f)
         {
             Crouch();
         }
@@ -130,12 +126,6 @@ public class Character : MonoBehaviour
         if (isDashing || hasDashed || isInDashCooldown || Time.time - moveHistory[^1].time > dashInputTiming || !isGrounded)
         {
             return;
-        }
-
-        // Logic to check moveHistory for dash input pattern
-        if (moveHistory.Count < 3)
-        {
-            return; // Not enough inputs to dash
         }
 
         if (CheckLastMoveCombination("forward", "neutral", "forward") || CheckLastMoveCombination("backward", "neutral", "backward"))
@@ -160,9 +150,19 @@ public class Character : MonoBehaviour
         {
             jumpBoostMovementSpeedMultiplier = 1.5f; // give burst of speed while in air
             hasJumped = false; // this is mainly in case there's a weird case where the player is jumping but they're still considered grounded
+
+            if (rb.linearVelocityY > 0)
+            {
+                AnimatePlayer("jump_rising");
+            }
+            else
+            {
+                AnimatePlayer("jump_falling");
+            }
         } else
         {
             jumpBoostMovementSpeedMultiplier = 1.0f;
+            AnimatePlayer("land");
         }
     }
 
@@ -179,6 +179,11 @@ public class Character : MonoBehaviour
 
         if (!isGrounded)
         {
+            if (rb.gravityScale > 5000)
+            {
+                return; // prevent overflow
+            }
+
             rb.gravityScale += currentAirGravityIncrement * Time.fixedDeltaTime;
             currentAirGravityIncrement *= airGravityIncrementGrowth;
         } else
@@ -215,6 +220,7 @@ public class Character : MonoBehaviour
     public virtual void Crouch()
     {
         // Custom crouch logic can be implemented here
+        AddNewMoveToHistory("crouch", true);
     }
 
     public virtual void Block()
@@ -240,6 +246,8 @@ public class Character : MonoBehaviour
 
         currentMovementSpeed = dashSpeed;
 
+        AnimatePlayer(dashDirection > 0 ? "dash" : "backwards_dash");
+
         yield return new WaitForSeconds(dashDuration);
 
         float initialSpeed = movementSpeed;
@@ -254,6 +262,8 @@ public class Character : MonoBehaviour
         hasDashed = true;
         isInDashCooldown = true;
         isDashing = false;
+
+        AnimatePlayer("stop_dash");
 
         yield return new WaitForSeconds(dashCooldown);
 
@@ -400,7 +410,7 @@ public class Character : MonoBehaviour
         return true;
     }
 
-    protected float GetSnappendInput(float rawInput)
+    protected float GetSnappedInput(float rawInput)
     {
         if (rawInput >= 0.5)
         {
@@ -412,6 +422,22 @@ public class Character : MonoBehaviour
         }
 
         return 0f;
+    }
+
+    protected void AnimatePlayer(string animation)
+    {
+        if (characterAnimator != null)
+        {
+            characterAnimator.AnimatePlayer(animation);
+        }
+    }
+
+    protected void AnimateMovement(float movementDirection)
+    {
+        if (characterAnimator != null)
+        {
+            characterAnimator.AnimateMovement(movementDirection);
+        }
     }
 
     private void OnDrawGizmos()
