@@ -1448,7 +1448,7 @@ GameObject:
   - component: {fileID: 1380803326}
   - component: {fileID: 1380803325}
   - component: {fileID: 1380803327}
-  - component: {fileID: 1380803329}
+  - component: {fileID: 1380803334}
   - component: {fileID: 1380803328}
   - component: {fileID: 1380803330}
   - component: {fileID: 1380803332}
@@ -1547,7 +1547,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f29861955d63ca43b4c3fd6cada2501, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  character: {fileID: 1380803329}
+  character: {fileID: 1380803334}
 --- !u!114 &1380803328
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1561,32 +1561,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterAnimator
   animator: {fileID: 1380803333}
---- !u!114 &1380803329
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1380803324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baf8de160bb5b64498e3ac24ea9594a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Character
-  movementSpeed: 6
-  dashSpeed: 50
-  dashDuration: 0.05
-  dashCooldown: 0
-  dashEndSmoothing: 0.1
-  jumpForce: 23
-  gravityScale: 7
-  gravityScaleWhileFalling: 15
-  airGravityIncrement: 0.6
-  airGravityIncrementGrowth: 1.2
-  jumpBurstSpeedMultiplier: 1.5
-  jumpBurstDuration: 0.1
-  jumpBurstVerticalBoost: 2
-  groundCheckTransform: {fileID: 1785257852}
 --- !u!114 &1380803330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1694,6 +1668,34 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1380803334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1380803324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aabf41088555464983faf51855f287c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Quon_Character
+  movementSpeed: 6
+  dashSpeed: 50
+  dashDuration: 0.05
+  dashCooldown: 0
+  dashEndSmoothing: 0.1
+  jumpForce: 23
+  gravityScale: 7
+  gravityScaleWhileFalling: 15
+  airGravityIncrement: 0.6
+  airGravityIncrementGrowth: 1.2
+  jumpBurstSpeedMultiplier: 1.5
+  jumpBurstDuration: 0.1
+  jumpBurstVerticalBoost: 2
+  groundCheckTransform: {fileID: 1785257852}
+  sawBladePrefab: {fileID: 0}
+  sawBladeSpawnPoint: {fileID: 0}
 --- !u!1 &1447833685
 GameObject:
   m_ObjectHideFlags: 0

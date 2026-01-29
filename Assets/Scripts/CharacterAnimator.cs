@@ -48,6 +48,16 @@ public class CharacterAnimator : MonoBehaviour
         {
             animator.SetInteger("fall_direction", 0);
         }
+
+        if (animation == "light_attack_1")
+        {
+            animator.SetTrigger("light_attack_1");
+        }
+
+        if (animation == "special_attack_1")
+        {
+            animator.SetTrigger("special_attack_1");
+        }
     }
 
     public void AnimateMovement(float movementDirection)

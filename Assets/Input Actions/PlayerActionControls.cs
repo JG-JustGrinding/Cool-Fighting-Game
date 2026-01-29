@@ -100,6 +100,24 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""light_attack_1"",
+                    ""type"": ""Button"",
+                    ""id"": ""5fb3b515-18ce-4abf-96c2-01270111341d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""special_attack_1"",
+                    ""type"": ""Button"",
+                    ""id"": ""387b9b02-e545-4810-857b-906462d6c2f1"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -355,6 +373,50 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
                     ""action"": ""Move"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a2215cc1-f556-4d5b-bb86-434e9e59dfc2"",
+                    ""path"": ""<Keyboard>/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard"",
+                    ""action"": ""light_attack_1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3f8bbffa-fecb-4df0-a674-c702e56258e8"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Controller"",
+                    ""action"": ""light_attack_1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c93f25e4-424f-4faa-ae62-29d70c47ba8a"",
+                    ""path"": ""<Keyboard>/z"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard"",
+                    ""action"": ""special_attack_1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""287bf498-a2a3-4442-9b36-ee59c2eaf79e"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""special_attack_1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -387,6 +449,8 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
         // Player
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
         m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
+        m_Player_light_attack_1 = m_Player.FindAction("light_attack_1", throwIfNotFound: true);
+        m_Player_special_attack_1 = m_Player.FindAction("special_attack_1", throwIfNotFound: true);
     }
 
     ~@PlayerActionControls()
@@ -468,6 +532,8 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
     private readonly InputActionMap m_Player;
     private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
     private readonly InputAction m_Player_Move;
+    private readonly InputAction m_Player_light_attack_1;
+    private readonly InputAction m_Player_special_attack_1;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -483,6 +549,14 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Move".
         /// </summary>
         public InputAction @Move => m_Wrapper.m_Player_Move;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/light_attack_1".
+        /// </summary>
+        public InputAction @light_attack_1 => m_Wrapper.m_Player_light_attack_1;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/special_attack_1".
+        /// </summary>
+        public InputAction @special_attack_1 => m_Wrapper.m_Player_special_attack_1;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -512,6 +586,12 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
             @Move.started += instance.OnMove;
             @Move.performed += instance.OnMove;
             @Move.canceled += instance.OnMove;
+            @light_attack_1.started += instance.OnLight_attack_1;
+            @light_attack_1.performed += instance.OnLight_attack_1;
+            @light_attack_1.canceled += instance.OnLight_attack_1;
+            @special_attack_1.started += instance.OnSpecial_attack_1;
+            @special_attack_1.performed += instance.OnSpecial_attack_1;
+            @special_attack_1.canceled += instance.OnSpecial_attack_1;
         }
 
         /// <summary>
@@ -526,6 +606,12 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
             @Move.started -= instance.OnMove;
             @Move.performed -= instance.OnMove;
             @Move.canceled -= instance.OnMove;
+            @light_attack_1.started -= instance.OnLight_attack_1;
+            @light_attack_1.performed -= instance.OnLight_attack_1;
+            @light_attack_1.canceled -= instance.OnLight_attack_1;
+            @special_attack_1.started -= instance.OnSpecial_attack_1;
+            @special_attack_1.performed -= instance.OnSpecial_attack_1;
+            @special_attack_1.canceled -= instance.OnSpecial_attack_1;
         }
 
         /// <summary>
@@ -599,5 +685,19 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnMove(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "light_attack_1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnLight_attack_1(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "special_attack_1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSpecial_attack_1(InputAction.CallbackContext context);
     }
 }

@@ -19,6 +19,8 @@ public class PlayerController : MonoBehaviour
 
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+        controls.Player.light_attack_1.performed += ctx => character.Attack("light_attack_1");
+        controls.Player.special_attack_1.performed += ctx => character.Attack("special_attack_1");
     }
 
     private void OnEnable()

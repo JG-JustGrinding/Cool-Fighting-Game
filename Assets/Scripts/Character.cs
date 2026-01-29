@@ -8,7 +8,6 @@ using System.Collections;
 // Handles logic, hitboxes/hurtboxes, actions, and calls animations
 public class Character : MonoBehaviour
 {
-
     [Header("Movement")]
     public float movementSpeed = 5.0f;
     protected float currentMovementSpeed = 5.0f;
@@ -46,19 +45,27 @@ public class Character : MonoBehaviour
 
     private readonly float groundCheckRadius = 0.1f;
 
+    protected bool isAttacking;
 
     [Header("Components")]
     public Transform groundCheckTransform;
 
     private CharacterAnimator characterAnimator;
 
+    protected AttackData[] attacks = new AttackData[0];
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    protected virtual void Start()
     {
         moveHistory = new List<InputEntry>();
         currentMovementSpeed = movementSpeed;
         rb = GetComponent<Rigidbody2D>();
         characterAnimator = GetComponent<CharacterAnimator>();
+    }
+
+    protected void SetAttacks(AttackData[] attackDatas)
+    {
+        attacks = attackDatas;
     }
 
     public virtual void Move(float rawInputX, float rawInputY)
@@ -270,18 +277,44 @@ public class Character : MonoBehaviour
         isInDashCooldown = false;
     }
 
-    public virtual void Attack()
+    public virtual void Attack(string attack)
     {
-        // Custom attack logic can be implemented here
+        if (isAttacking)
+        {
+            return;
+        }
+
+        AttackData attackData = System.Array.Find(attacks, a => a.attackName == attack);
+
+        if (attackData == null)
+        {
+            Debug.LogWarning($"Attack '{attack}' not found!");
+            return;
+        }
+
+        AnimatePlayer(attack);
+        SetAttacking(attackData.framesActive);
     }
 
-    public virtual void SpecialMove()
+    protected virtual void SetAttacking(int framesActive)
     {
-        // Custom special move logic can be implemented here
+        StartCoroutine(AttackingCoroutine(framesActive));
+    }
+
+    protected IEnumerator AttackingCoroutine(int framesActive)
+    {
+        isAttacking = true;
+        float attackDuration = framesActive / 60f; // assuming 60 FPS
+        yield return new WaitForSeconds(attackDuration);
+        isAttacking = false;
     }
 
     protected virtual float GetMovementSpeed()
     {
+        if (isAttacking && isGrounded)
+        {
+            return 0f; // prevent movement while attacking on the ground (air movement is allowed)
+        }
         return currentMovementSpeed; // affected by blocking, dashing, crouching, etc.
     }
 
