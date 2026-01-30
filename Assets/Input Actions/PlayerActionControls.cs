@@ -388,7 +388,7 @@ public partial class @PlayerActionControls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""3f8bbffa-fecb-4df0-a674-c702e56258e8"",
-                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""path"": ""<Gamepad>/buttonEast"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";Controller"",

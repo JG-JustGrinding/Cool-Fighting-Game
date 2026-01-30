@@ -242,6 +242,8 @@ public class Character : MonoBehaviour
             return;
         }
 
+        isAttacking = false;
+
         dashDirection = direction;
 
         StartCoroutine(DashCoroutine());

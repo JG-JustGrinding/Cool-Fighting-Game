@@ -25,16 +25,22 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        controls.Player.Enable();
+        controls?.Player.Enable();
     }
 
     private void OnDisable()
     {
-        controls.Player.Disable();
+        controls?.Player.Disable();
     }
 
     void Update()
     {
         character.Move(moveInput.x, moveInput.y);
+
+        // DELETE THIS EVENTUALLY
+        if (transform.position.y < -150f)
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+        }
     }
 }
